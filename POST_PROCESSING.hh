@@ -1,3 +1,4 @@
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -17,7 +18,7 @@ class POST_PROCESSING
   public :
 
     POST_PROCESSING(ui_vector* offset,d_vector* x,d_vector* y,d_vector* flux_moments,
-        string* output_file);
+        d_vector* scalar_flux,string* output_file);
     ~POST_PROCESSING();
     /// Create the silo file.
     void Create_silo_file();
@@ -31,6 +32,7 @@ class POST_PROCESSING
     d_vector* x;
     d_vector* y;
     d_vector* flux_moments;
+    d_vector* scalar_flux;
     string* output_file;
 
     /// Coordinates of the nodes.

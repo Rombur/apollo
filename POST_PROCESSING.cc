@@ -1,8 +1,13 @@
 #include "POST_PROCESSING.hh"
 
 POST_PROCESSING::POST_PROCESSING(ui_vector* offset_,d_vector* x_,d_vector* y_,
-    d_vector* flux_moments_,string* output_file_) :
-  offset(offset_),x(x_),y(y_),flux_moments(flux_moments_),output_file(output_file_)
+    d_vector* flux_moments_,d_vector* scalar_flux_,string* output_file_) :
+  offset(offset_),
+  x(x_),
+  y(y_),
+  flux_moments(flux_moments_),
+  scalar_flux(scalar_flux_),
+  output_file(output_file_)
 {
   nodelist.resize(x->size());
   coords = new double*[2];
@@ -38,11 +43,16 @@ void POST_PROCESSING::Create_silo_file()
   DBPutUcdmesh(dbfile,"mesh",n_dims,NULL,coords,n_nodes,n_zones,"zonelist",NULL,
       DB_DOUBLE,NULL);
 
+  // Write the scalar flux
+  DBPutUcdvar1(dbfile,"scalar_flux","mesh",&(*scalar_flux)[0],n_nodes,NULL,0,
+        DB_DOUBLE,DB_NODECENT,NULL);
+
+  // Write the angular flux moments
   for (unsigned int i=0; i<n_moments; ++i)
   {
     const unsigned int flux_offset(i*n_nodes);
     d_vector values(n_nodes);
-    stringstream flux("flux_moment_");
+    stringstream flux("angular_flux_moment_");
     // Go at the end of the stringstream and append i
     flux.seekp(0,ios_base::end);
     flux<<i;
