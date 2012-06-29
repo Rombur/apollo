@@ -53,6 +53,8 @@ int main(int argc,char **argv)
   // Open the file to read it
   ifstream file(argv[2],ios::in);
 
+  assert(file);
+
   // Read the number of cells, the number of nodes and the number of values
   file>>n_cells>>n_nodes>>n_values;
 
