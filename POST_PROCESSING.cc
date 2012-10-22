@@ -1,12 +1,14 @@
 #include "POST_PROCESSING.hh"
 
-POST_PROCESSING::POST_PROCESSING(ui_vector* offset_,d_vector* x_,d_vector* y_,
-    d_vector* flux_moments_,d_vector* scalar_flux_,string* output_file_) :
+POST_PROCESSING::POST_PROCESSING(bool output_dose,ui_vector* offset_,d_vector* x_,
+    d_vector* y_,d_vector* flux_moments_,d_vector* scalar_flux_,d_vector* dose_,
+    string* output_file_) :
   offset(offset_),
   x(x_),
   y(y_),
   flux_moments(flux_moments_),
   scalar_flux(scalar_flux_),
+  dose(dose_),
   output_file(output_file_)
 {
   nodelist.resize(x->size());
@@ -46,6 +48,11 @@ void POST_PROCESSING::Create_silo_file()
   // Write the scalar flux
   DBPutUcdvar1(dbfile,"scalar_flux","mesh",&(*scalar_flux)[0],n_nodes,NULL,0,
         DB_DOUBLE,DB_NODECENT,NULL);
+
+  // Write the dose if necessary
+  if (output_dose==true)
+    DBPutUcdvar1(dbfile,"dose","mesh",&(*dose)[0],n_nodes,NULL,0,DB_DOUBLE,
+        DB_NODECENT,NULL);
 
   // Write the angular flux moments
   for (unsigned int i=0; i<n_moments; ++i)

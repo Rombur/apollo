@@ -17,8 +17,9 @@ class POST_PROCESSING
 {
   public :
 
-    POST_PROCESSING(ui_vector* offset,d_vector* x,d_vector* y,d_vector* flux_moments,
-        d_vector* scalar_flux,string* output_file);
+    POST_PROCESSING(bool output_dose,ui_vector* offset,d_vector* x,d_vector* y,
+        d_vector* flux_moments,d_vector* scalar_flux,d_vector* dose,
+        string* output_file);
     ~POST_PROCESSING();
     /// Create the silo file.
     void Create_silo_file();
@@ -28,11 +29,13 @@ class POST_PROCESSING
 
   private :
 
+    bool output_dose;
     ui_vector* offset;
     d_vector* x;
     d_vector* y;
     d_vector* flux_moments;
     d_vector* scalar_flux;
+    d_vector* dose;
     string* output_file;
 
     /// Coordinates of the nodes.
