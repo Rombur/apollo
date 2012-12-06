@@ -1,8 +1,9 @@
 #include "POST_PROCESSING.hh"
 
-POST_PROCESSING::POST_PROCESSING(bool output_dose,ui_vector* offset_,d_vector* x_,
-    d_vector* y_,d_vector* flux_moments_,d_vector* scalar_flux_,d_vector* dose_,
-    string* output_file_) :
+POST_PROCESSING::POST_PROCESSING(bool output_dose,unsigned int n_groups_,
+    ui_vector* offset_,d_vector* x_,d_vector* y_,d_vector* flux_moments_,
+    d_vector* scalar_flux_,d_vector* dose_,string* output_file_) :
+  n_groups(n_groups_),
   offset(offset_),
   x(x_),
   y(y_),
@@ -46,8 +47,15 @@ void POST_PROCESSING::Create_silo_file()
       DB_DOUBLE,NULL);
 
   // Write the scalar flux
-  DBPutUcdvar1(dbfile,"scalar_flux","mesh",&(*scalar_flux)[0],n_nodes,NULL,0,
-        DB_DOUBLE,DB_NODECENT,NULL);
+  for (unsigned int g=0; g<n_groups; ++g)
+  {
+    stringstream group("group_");
+    group.seekp(0,ios_base::end);
+    group<<g;
+    string scalar_flux_str(group.str()+= "_scalar_flux");
+    DBPutUcdvar1(dbfile,scalar_flux_str.c_str(),"mesh",&(*scalar_flux)[0],
+        n_nodes,NULL,0,DB_DOUBLE,DB_NODECENT,NULL);
+  }
 
   // Write the dose if necessary
   if (output_dose==true)
@@ -55,19 +63,25 @@ void POST_PROCESSING::Create_silo_file()
         DB_NODECENT,NULL);
 
   // Write the angular flux moments
-  for (unsigned int i=0; i<n_moments; ++i)
+  for (unsigned int g=0; g<n_groups; ++g)
   {
-    const unsigned int flux_offset(i*n_nodes);
-    d_vector values(n_nodes);
-    stringstream flux("angular_flux_moment_");
-    // Go at the end of the stringstream and append i
-    flux.seekp(0,ios_base::end);
-    flux<<i;
-
-    for (unsigned int j=0; j<n_nodes; ++j)
-      values[j] = (*flux_moments)[flux_offset+j];
-    DBPutUcdvar1(dbfile,flux.str().c_str(),"mesh",&values[0],n_nodes,NULL,0,
-        DB_DOUBLE,DB_NODECENT,NULL);
+    stringstream group("group_");
+    group.seekp(0,ios_base::end);
+    group<<g;
+    for (unsigned int i=0; i<n_moments; ++i)
+    {
+      const unsigned int flux_offset(i*n_nodes+g*n_moments*n_nodes);
+      d_vector values(n_nodes);
+      stringstream flux("_angular_flux_moment_");
+      // Go at the end of the stringstream and append i
+      flux.seekp(0,ios_base::end);
+      flux<<i;
+      string ang_flux_str(group.str()+flux.str());
+      for (unsigned int j=0; j<n_nodes; ++j)
+        values[j] = (*flux_moments)[flux_offset+j];
+      DBPutUcdvar1(dbfile,ang_flux_str.c_str(),"mesh",&values[0],
+          n_nodes,NULL,0,DB_DOUBLE,DB_NODECENT,NULL);
+    }
   }
 
   // Close the silo file
