@@ -30,8 +30,9 @@ POST_PROCESSING::POST_PROCESSING(unsigned int n_groups_,ui_vector* offset_,
   x(x_),
   y(y_),
   c_x(c_x_),
-  c_y(c_y),
+  c_y(c_y_),
   flux_moments(flux_moments_),
+  c_flux_moments(c_flux_moments_),
   scalar_flux(NULL),
   dose(NULL),
   output_file(output_file_)
@@ -170,6 +171,7 @@ void POST_PROCESSING::Create_diffusion_silo_file()
   refined_y->insert(refined_y->end(),y->begin(),y->end());
   refined_y->insert(refined_y->end(),c_y->begin(),c_y->end());
 
+  std::cout<<"apres concatenation"<<std::endl;
   coords[0] = &((*refined_x)[0]);
   coords[1] = &((*refined_y)[0]);
 
@@ -194,6 +196,9 @@ void POST_PROCESSING::Create_diffusion_silo_file()
 
 
   delete[] coords;
+  delete refined_flux_moments;
+  delete refined_x;
+  delete refined_y;
 
   // Close the silo file
   DBClose(dbfile);
@@ -268,17 +273,14 @@ void POST_PROCESSING::Reorder_refined_cells()
   
   shapecounts.resize(1,n_refined_cells);
 
-  unsigned int pos(0),k(0),m(n_refined_cells);
+  unsigned int k(0),m(n_refined_cells);
   for (unsigned int i=0; i<n_cells; ++i)
   {
     for (unsigned int j=0; j<n_edges[i]; ++j)
     {
-      nodelist[pos] = k;
-      ++pos;
-      nodelist[pos] = k+1;
-      ++pos;
-      nodelist[pos] = m;
-      ++pos;
+      nodelist.push_back(k);
+      nodelist.push_back(k+1);
+      nodelist.push_back(m);
       ++k;
     }
     ++m;

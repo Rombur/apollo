@@ -98,7 +98,7 @@ int main(int argc,char **argv)
   {
     c_offset.resize(n_cells+1,0);
     for (unsigned int i=0; i<n_cells+1; ++i)
-      file>>offset[i];
+      file>>c_offset[i];
   }
   // Read the coordinates of the nodes
   for (unsigned int i=0; i<n_nodes; ++i)
