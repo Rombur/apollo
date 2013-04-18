@@ -27,7 +27,7 @@ int main(int argc,char **argv)
   assert(argc==4);
   bool output_dose(false);
   unsigned int n_cells,n_nodes,n_groups,n_values,flag;
-  ui_vector offset,c_offset;
+  ui_vector offset;
   d_vector x,y,c_x,c_y,flux_moments,c_flux_moments,scalar_flux,dose;
   string output_file(argv[3]);
   output_file.append(".silo");
@@ -94,12 +94,6 @@ int main(int argc,char **argv)
   // Read the offset
   for (unsigned int i=0; i<n_cells+1; ++i)
     file>>offset[i];
-  if (flag==2)
-  {
-    c_offset.resize(n_cells+1,0);
-    for (unsigned int i=0; i<n_cells+1; ++i)
-      file>>c_offset[i];
-  }
   // Read the coordinates of the nodes
   for (unsigned int i=0; i<n_nodes; ++i)
     file>>x[i]>>y[i];
@@ -131,7 +125,7 @@ int main(int argc,char **argv)
     }
     else
     {
-      const unsigned int n_c_values(n_nodes+n_cells);
+      const unsigned int n_c_values(n_cells);
       c_x.resize(n_c_values,0.);
       c_y.resize(n_c_values,0.);
       c_flux_moments.resize(n_groups*n_c_values,0.);
@@ -159,7 +153,7 @@ int main(int argc,char **argv)
   }
   else
   {
-    POST_PROCESSING post_process(n_groups,&offset,&c_offset,&x,&y,&c_x,&c_y,
+    POST_PROCESSING post_process(n_groups,&offset,&x,&y,&c_x,&c_y,
         &flux_moments,&c_flux_moments,&output_file);
 
     cout<<"Start creating the silo file."<<endl;

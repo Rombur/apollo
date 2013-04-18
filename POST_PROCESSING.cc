@@ -6,7 +6,6 @@ POST_PROCESSING::POST_PROCESSING(bool output_dose_,unsigned int n_groups_,
   output_dose(output_dose_),
   n_groups(n_groups_),
   offset(offset_),
-  c_offset(NULL),
   x(x_),
   y(y_),
   c_x(NULL),
@@ -21,12 +20,11 @@ POST_PROCESSING::POST_PROCESSING(bool output_dose_,unsigned int n_groups_,
 }     
 
 POST_PROCESSING::POST_PROCESSING(unsigned int n_groups_,ui_vector* offset_,
-    ui_vector* c_offset_,d_vector* x_,d_vector* y_,d_vector* c_x_,d_vector* c_y_,
+    d_vector* x_,d_vector* y_,d_vector* c_x_,d_vector* c_y_,
     d_vector* flux_moments_,d_vector* c_flux_moments_,string* output_file_) :
   output_dose(false),
   n_groups(n_groups_),
   offset(offset_),
-  c_offset(c_offset_),
   x(x_),
   y(y_),
   c_x(c_x_),
@@ -151,9 +149,13 @@ void POST_PROCESSING::Create_diffusion_silo_file()
   }
 
   // Take care of the refined mesh
+  nodelist.clear();
+  shapecounts.clear();
+  shapesize.clear();
+  shapetypes.clear();
   Reorder_refined_cells();
-  const unsigned int refined_n_nodes(nodelist.size());
-  const unsigned int refined_n_zones(n_nodes/3);
+  const unsigned int refined_n_nodes(x->size()+c_x->size());
+  const unsigned int refined_n_zones(nodelist.size()/3);
 
   // Concatenate the coordinates and the flux moments
   d_vector* refined_flux_moments = new d_vector();
@@ -171,17 +173,17 @@ void POST_PROCESSING::Create_diffusion_silo_file()
   refined_y->insert(refined_y->end(),y->begin(),y->end());
   refined_y->insert(refined_y->end(),c_y->begin(),c_y->end());
 
-  std::cout<<"apres concatenation"<<std::endl;
   coords[0] = &((*refined_x)[0]);
   coords[1] = &((*refined_y)[0]);
 
   // Write out connectivity information
-  DBPutZonelist2(dbfile,"refined_zonelist",refined_n_zones,n_dims,&nodelist[0],nodelist.size(),0,
-      0,0,&shapetypes[0],&shapesize[0],&shapecounts[0],shapetypes.size(),NULL);
+  DBPutZonelist2(dbfile,"refined_zonelist",refined_n_zones,n_dims,&nodelist[0],
+      nodelist.size(),0,0,0,&shapetypes[0],&shapesize[0],&shapecounts[0],
+      shapetypes.size(),NULL);
   
   // Write an unstructured mesh
-  DBPutUcdmesh(dbfile,"refined_mesh",n_dims,NULL,coords,n_nodes,refined_n_zones,"refined_zonelist",NULL,
-      DB_DOUBLE,NULL);
+  DBPutUcdmesh(dbfile,"refined_mesh",n_dims,NULL,coords,refined_n_nodes,
+      refined_n_zones,"refined_zonelist",NULL,DB_DOUBLE,NULL);
 
   // Write the scalar flux
   for (unsigned int g=0; g<n_groups; ++g)
@@ -190,7 +192,7 @@ void POST_PROCESSING::Create_diffusion_silo_file()
     group.seekp(0,ios_base::end);
     group<<g;
     string scalar_flux_str(group.str()+= "_refined_scalar_flux");
-    DBPutUcdvar1(dbfile,scalar_flux_str.c_str(),"mesh",&(*refined_flux_moments)[0],
+    DBPutUcdvar1(dbfile,scalar_flux_str.c_str(),"refined_mesh",&(*refined_flux_moments)[0],
         refined_n_nodes,NULL,0,DB_DOUBLE,DB_NODECENT,NULL);
   }
 
@@ -259,30 +261,30 @@ void POST_PROCESSING::Reorder_cells()
 void POST_PROCESSING::Reorder_refined_cells()
 {
   const unsigned int n_cells(offset->size()-1);
-  unsigned int n_refined_cells(0);
+  const unsigned int n_nodes(x->size());
   i_vector reorder_offset;
   ui_vector n_edges(n_cells,0);
+  shapesize.resize(1,3);
   shapetypes.resize(1, DB_ZONETYPE_TRIANGLE);
-  nodelist.clear();
 
   for (unsigned int i=0; i<n_cells; ++i)
-  {
     n_edges[i] = (*offset)[i+1]-(*offset)[i];
-    n_refined_cells += n_edges[i];
-  }
-  
-  shapecounts.resize(1,n_refined_cells);
 
-  unsigned int k(0),m(n_refined_cells);
+  unsigned int k(0),m(n_nodes);
   for (unsigned int i=0; i<n_cells; ++i)
   {
+    unsigned int k_old(k);
     for (unsigned int j=0; j<n_edges[i]; ++j)
     {
       nodelist.push_back(k);
-      nodelist.push_back(k+1);
+      if (j+1==n_edges[i])
+        nodelist.push_back(k_old);
+      else
+        nodelist.push_back(k+1);
       nodelist.push_back(m);
       ++k;
     }
     ++m;
   }
+  shapecounts.resize(1,nodelist.size()/3);
 }

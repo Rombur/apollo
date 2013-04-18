@@ -21,8 +21,8 @@ class POST_PROCESSING
         d_vector* x,d_vector* y,d_vector* flux_moments,d_vector* scalar_flux,
         d_vector* dose,string* output_file);
     
-    POST_PROCESSING(unsigned int n_groups,ui_vector* offset,ui_vector* c_offset,
-        d_vector* x,d_vector* y,d_vector* c_x,d_vector* c_y,d_vector* flux_moments,
+    POST_PROCESSING(unsigned int n_groups,ui_vector* offset,d_vector* x,
+        d_vector* y,d_vector* c_x,d_vector* c_y,d_vector* flux_moments,
         d_vector* c_flux_moments,string* output_file);
     
     /// Create the silo file for transport solution.
@@ -43,7 +43,6 @@ class POST_PROCESSING
     bool output_dose;
     unsigned int n_groups;
     ui_vector* offset;
-    ui_vector* c_offset;
     d_vector* x;
     d_vector* y;
     d_vector* c_x;
